@@ -1,2 +1,4 @@
 aiogram
 ollama
+python-dotenv
+chromadb
