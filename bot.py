@@ -12,6 +12,7 @@ import os
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
+OWNER_ID = os.getenv("OWNER_ID")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -39,11 +40,14 @@ def ask_ai(user_message: str) -> str:
     price_words = ["прайс", "цена", "стоимость", "сколько стоит", "меню"]
     hours_words = ["часы", "открыто", "работаете", "закрываетесь"]
     hello_words = ["здравствуйте", "привет", "добрый вечер", "добрый день"]
+    order_words = ["заказать", "хочу заказ", "оформить заказ"]
 
     if any(word in user_message.lower() for word in price_words + hours_words):
         return load_business_info("business_info.txt")
     if any(word in user_message.lower() for word in hello_words):
         return load_business_info("hello.txt")
+    if any(word in user_message.lower() for word in order_words):
+        return "Спасибо за заказ! Мы уже получили информацию и скоро свяжемся с вами для подтверждения 😊"
 
     try:
         response = ollama.chat(model="llama3.2", messages=[{"role": "user", "content": user_message}])
@@ -81,6 +85,13 @@ def search_business_info(query: str) -> str:
 @dp.message()
 async def handle_message(message: types.Message):
     reply = ask_ai(message.text)
+
+    order_words = ["заказать", "хочу заказ", "оформить заказ"]
+    if any(word in message.text.lower() for word in order_words):
+        await bot.send_message(
+            OWNER_ID,
+            f"🔔 Новый заказ!\nОт: {message.from_user.first_name}\nСообщение: {message.text}"
+        )
 
     logger.info(
         f"Пользователь: {message.from_user.first_name} {message.from_user.last_name} | "
